@@ -24,28 +24,22 @@ opener.addheaders = [('User-Agent', 'Mozilla/4.0 (compatible; MSIE 7.0b; Windows
 
 def fetch_firstlevel_download_url(url):
 	(html, headers) = openUrl( url )
-	#print html
+
 	chs = re.compile('href="([^"]+)" class="tn_button1"').findall(html)
 	
 	if len( chs ) == 0:
-		sys.exit(0, "Sorry, can't find first level download url")
+		sys.exit(0, "Sorry, can't find first level download url. Maybe indowebster redesign it's homepage.")
 	
 	return chs[0]
-	#print chs
 
 def fetch_real_download_url ( first_url ):
 	url_get_real_download = "http://www.indowebster.com/" + first_url
 	(html, headers) = openUrl( url_get_real_download )
 	
-	#print headers;
-	
+
 	dl_kuncis = re.compile('<input type="hidden" value="([^"]+)" name="kuncis">').findall(html)
 	dl_id = re.compile('<input type="hidden" value="([^"]+)" name="id" />').findall(html)
 	dl_name = re.compile('<input type="hidden" value="([^"]+)" name="name" />').findall(html)
-	
-	#print dl_kuncis
-	#print dl_id
-	#print dl_name
 	
 	real_download_url = "http://www.indowebster.com/download.php"
 	post_data = {
@@ -61,14 +55,17 @@ def fetch_real_download_url ( first_url ):
 		if data[0] == 'set-cookie':
 			cookie = data[1]
 	data = urllib.urlencode(post_data)
-	req = urllib2.Request(real_download_url, data)
-	req.add_header('Referer', url_get_real_download)
-	req.add_header('User-Agent', 'Mozilla/4.0 (compatible; MSIE 7.0b; Windows NT 6.0)')
-	req.add_header('Cookie', cookie)
-	
-	response = urllib2.urlopen(req)
 
-	return (string.replace(response.headers.getheader('refresh'), '0; url=', ''), dl_name[0])
+	(response, headers) = openUrl(real_download_url, data, 
+								url_get_real_download, 
+								'Mozilla/4.0 (compatible; MSIE 7.0b; Windows NT 6.0)', 
+								cookie)
+	idws_direct_url = ''
+	for data in headers:
+		if data[0] == 'refresh':
+			idws_direct_url = string.replace(data[1], '0; url=', '')
+
+	return (idws_direct_url, dl_name[0])
 
 	
 def gunzip(fileobj):
@@ -77,9 +74,19 @@ def gunzip(fileobj):
 	g.close()
 	return gFile
 
-def openUrl(url):
-	request = urllib2.Request(url)
+def openUrl(url, data=None, referer=None, UA=None, Cookie=None):
+	if data == None:
+		request = urllib2.Request(url)
+	else:
+		request = urllib2.Request(url, data)
 	request.add_header('Accept-encoding', 'gzip')
+	if referer <> None:
+		request.add_header('Referer', referer)
+	if UA <> None:
+		request.add_header('User-Agent', UA)
+	if Cookie <> None:
+		request.add_header('Cookie', Cookie)
+
 	retry = 1
 	maxRetry = 4
 	page = opener.open(request)
@@ -96,7 +103,7 @@ def openUrl(url):
 	return(html, page.headers.items())
 
 def defaultMessage():
-	print "Usage: idws.py -u fileurl [OPTION...]"
+	print "Usage: " + sys.argv[0] + " -u fileurl [OPTION...]"
 	print "Extract indowebster direct url from file url."
 	print """
 	   -u, --url FILEURL                indowebster's permalink URL
@@ -142,7 +149,8 @@ if __name__ == "__main__":
 		else:
 			print real_dl_url[0]
 			print real_dl_url[1]
-	
+
+
 	except urllib2.HTTPError, e:
 		print "error: %s" % e.code
 	except urllib2.URLError, e:
