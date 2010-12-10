@@ -4,7 +4,7 @@ idws.py is simple script that will extract direct download url and it's filename
 
 h2. Why?
 
-I'm tired from the complicated step just to get the URL. I know it's for advertising, but it's annoying!
+I'm tired of the complicated step just to get the URL. I know it's for advertising, but it's annoying!
 
 
 h2. Get it.
@@ -14,7 +14,11 @@ Just hit download link from this page: https://github.com/ariefbayu/Indowebster-
 h2. Use it.
 
 To you it, extract the downloaded file somewhere on your system and then:
-<pre>$python idws.py http://indowebster.com/some_download_url_you_want_to_extract.html</pre>
+<pre>
+$python idws.py -u http://indowebster.com/some_download_url_you_want_to_extract.html
+$python idws.py -u http://indowebster.com/some_download_url_you_want_to_extract.html -w
+$python idws.py -u http://indowebster.com/some_download_url_you_want_to_extract.html -w -e "--limit-rate=10K"
+</pre>
 
 The script will then output 2 lines of data consisting of the direct url in first line and it's filename in second line.
 

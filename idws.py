@@ -1,8 +1,8 @@
 #!/usr/bin/env python
  
 """
-__version__ = "$Revision: 0.1 $"
-__date__ = "$Date: 2010/11/30 $"
+__version__ = "$Revision: 0.2 $"
+__date__ = "$Date: 2010/12/11 $"
 """
 
 import sys
@@ -16,6 +16,7 @@ import gzip
 import zipfile
 import cStringIO
 import string
+import getopt
 
 
 opener = urllib2.build_opener(urllib2.HTTPHandler())
@@ -95,16 +96,30 @@ def openUrl(url):
 	return(html, page.headers.items())
 
 def defaultMessage():
-	print "Usage: idws.py fileurl"
+	print "Usage: idws.py -u fileurl [OPTION...]"
 	print "Extract indowebster direct url from file url."
-	print "Line #1: Direct URL"
-	print "Line #2: Filename"
+	print """
+	   -u, --url FILEURL                indowebster's permalink URL
+	   -w, --as-wget                    echo result as wget command (wget -c url -u filename) 
+	   -e, --extra-param EXTRA_PARAM    Extra parameter for wget if -w is set
+	"""
 
 if __name__ == "__main__":
 	idws_url = ''
-	
+	wget_extra_param = ''
+	echo_as_wget = False
 	try:
-		idws_url = sys.argv[1]
+
+		opts, args = getopt.getopt(sys.argv[1:], "u:e:w", ["url=", "extra-param=", "as-wget"])
+
+		for opt, arg in opts:
+			if opt in ("-u", "--url"):
+				idws_url = arg
+			elif opt in ("-e", "--extra-param"):
+				wget_extra_param = arg
+			elif opt in ("-w", "--as-wget"):
+				echo_as_wget = True
+
 	except:
 		defaultMessage()
 		sys.exit(1)
@@ -116,17 +131,18 @@ if __name__ == "__main__":
 	except:
 		raise RuntimeError( '[url] must be a valid URL (with trailing http://)' )
 	
-	#"url is '" + idws_url + "'"
-	
 	
 	try:
 		first_url = fetch_firstlevel_download_url( idws_url )
 		
 		real_dl_url = fetch_real_download_url ( first_url )
 		
-		print real_dl_url[0]
-		print real_dl_url[1]
-		
+		if echo_as_wget:
+			print "wget " + wget_extra_param + " -c \"" + real_dl_url[0] + "\" -O \"" + real_dl_url[1] + "\" "
+		else:
+			print real_dl_url[0]
+			print real_dl_url[1]
+	
 	except urllib2.HTTPError, e:
 		print "error: %s" % e.code
 	except urllib2.URLError, e:
