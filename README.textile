@@ -26,7 +26,7 @@ Will output single line of data in _wget_ format
 
 @$python idws.py -u http://indowebster.com/some_download_url_you_want_to_extract.html -w -e "--limit-rate=10K"@
 
-Will output single line of data in <pre>wget</pre> format with supplied additional parameter 
+Will output single line of data in _wget_ format with supplied additional parameter 
 
 h2. Contribute!
 
