@@ -22,7 +22,7 @@ Will output two lines of data consisting of the direct download URL in first lin
 
 @$python idws.py -u http://indowebster.com/some_download_url_you_want_to_extract.html -w@
 
-Will output single line of data in <pre>wget</pre> format
+Will output single line of data in _wget_ format
 
 @$python idws.py -u http://indowebster.com/some_download_url_you_want_to_extract.html -w -e "--limit-rate=10K"@
 
