@@ -28,6 +28,10 @@ Will output single line of data in _wget_ format
 
 Will output single line of data in _wget_ format with supplied additional parameter 
 
+@$python idws.py -f /path/to/your/urlfile.txt -w -e "--limit-rate=10K"@
+
+Will output lines of data in _wget_ format with supplied additional parameter. Each line in file the permalink URL 
+
 h2. Contribute!
 
 If you find any bug, fork, fix, and submit a pull request.  If you'd like to extend functionality, go for it!
