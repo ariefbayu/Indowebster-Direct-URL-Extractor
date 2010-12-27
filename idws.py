@@ -129,13 +129,25 @@ def defaultMessage():
 	   -e, --extra-param EXTRA_PARAM    Extra parameter for wget if -w is set
 	"""
 
+def fetch_url_list( list_file ):
+	
+	arr_list = []
+	
+	file_handler = open( list_file, "r" )
+	for line in file_handler:
+		arr_list.append( line )
+		
+	return arr_list
+		
 if __name__ == "__main__":
 	idws_url = ''
 	wget_extra_param = ''
 	echo_as_wget = False
+	multiproc = False
+	list_file = ''
 	try:
 
-		opts, args = getopt.getopt(sys.argv[1:], "u:e:w", ["url=", "extra-param=", "as-wget"])
+		opts, args = getopt.getopt(sys.argv[1:], "f:u:e:w", ["file=", "url=", "extra-param=", "as-wget"])
 
 		for opt, arg in opts:
 			if opt in ("-u", "--url"):
@@ -144,45 +156,58 @@ if __name__ == "__main__":
 				wget_extra_param = arg
 			elif opt in ("-w", "--as-wget"):
 				echo_as_wget = True
-
+			elif opt in ("-f", "--file"):
+				list_file = arg
+				multiproc = True
 	except:
 		defaultMessage()
 		sys.exit( 1 )
 
-	i = urlparse( idws_url )
-	if i.scheme == '':
-		print '[url] must be a valid URL (with trailing http://)'
-		sys.exit( 1 )	
-
-	counter = 0
-	first_url = False
-	while first_url == False and counter < loop_count:
-		counter += 1
-
-		first_url = fetch_firstlevel_download_url( idws_url )
-
-		if first_url == False:
-			continue
-
-		counter2 = 0
-		real_dl_url = False
-		while real_dl_url == False and counter2 < loop_count:
-			counter2 += 1
-
-			real_dl_url = fetch_real_download_url ( first_url )
-			if real_dl_url == False:
-				#sleep, to prevent abusing idws's server resources
-				#print "sleep #", counter2
-				time.sleep(0.5)
-
-	if real_dl_url == False:
-		print "unable to fetch direct download from %s" % idws_url
+	url_list = []
+	if multiproc == False:
+		url_list = [idws_url]
 	else:
-		if echo_as_wget:
-			print "wget " + wget_extra_param + " -c \"" + real_dl_url[0] + "\" -O \"" + real_dl_url[1] + "\" "
+		if os.path.exists( list_file):
+			url_list = fetch_url_list( list_file )
 		else:
-			print real_dl_url[0]
-			print real_dl_url[1]
+			print "Unable to read url list from %s. Is it exists? Can I read it?" % list_file
+		
+	for the_idws_url in url_list:
+		#print the_idws_url
+		i = urlparse( the_idws_url )
+		if i.scheme == '':
+			print '[url] must be a valid URL (with trailing http://)'
+			sys.exit( 1 )	
+
+		counter = 0
+		first_url = False
+		while first_url == False and counter < loop_count:
+			counter += 1
+
+			first_url = fetch_firstlevel_download_url( the_idws_url )
+
+			if first_url == False:
+				continue
+
+			counter2 = 0
+			real_dl_url = False
+			while real_dl_url == False and counter2 < loop_count:
+				counter2 += 1
+
+				real_dl_url = fetch_real_download_url ( first_url )
+				if real_dl_url == False:
+					#sleep, to prevent abusing idws's server resources
+					#print "sleep #", counter2
+					time.sleep(0.5)
+
+		if real_dl_url == False:
+			print "unable to fetch direct download from %s" % the_idws_url
+		else:
+			if echo_as_wget:
+				print "wget " + wget_extra_param + " -c \"" + real_dl_url[0] + "\" -O \"" + real_dl_url[1] + "\" "
+			else:
+				print real_dl_url[0]
+				print real_dl_url[1]
 
 
 #	except urllib2.HTTPError, e:
