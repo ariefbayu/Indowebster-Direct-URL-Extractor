@@ -19,6 +19,8 @@ import string
 import getopt
 
 
+loop_count = 10 #how many try is allowed before timeout?
+
 opener = urllib2.build_opener(urllib2.HTTPHandler())
 opener.addheaders = [('User-Agent', 'Mozilla/4.0 (compatible; MSIE 7.0b; Windows NT 6.0)')]  
 
@@ -34,12 +36,22 @@ def fetch_firstlevel_download_url(url):
 
 def fetch_real_download_url ( first_url ):
 	url_get_real_download = "http://www.indowebster.com/" + first_url
-	(html, headers) = openUrl( url_get_real_download )
+	fetch_result = False
+	
+	fetch_result = openUrl( url_get_real_download )
+	html = headers = False
+	if fetch_result == False:
+		return False
+	
+	(html, headers) = fetch_result
 	
 
 	dl_kuncis = re.compile('<input type="hidden" value="([^"]+)" name="kuncis">').findall(html)
 	dl_id = re.compile('<input type="hidden" value="([^"]+)" name="id" />').findall(html)
 	dl_name = re.compile('<input type="hidden" value="([^"]+)" name="name" />').findall(html)
+	
+	if len(dl_kuncis) == 0:
+		return False
 	
 	real_download_url = "http://www.indowebster.com/download.php"
 	post_data = {
@@ -65,6 +77,8 @@ def fetch_real_download_url ( first_url ):
 		if data[0] == 'refresh':
 			idws_direct_url = string.replace(data[1], '0; url=', '')
 
+	if idws_direct_url.strip() == '':
+		return False
 	return (idws_direct_url, dl_name[0])
 
 	
@@ -89,7 +103,11 @@ def openUrl(url, data=None, referer=None, UA=None, Cookie=None):
 
 	retry = 1
 	maxRetry = 4
-	page = opener.open(request)
+	try:
+		page = opener.open(request)
+	except urllib2.HTTPError, e:
+		return False
+	
 	while retry < maxRetry:
 		try:
 			page = opener.open(request)
@@ -129,21 +147,37 @@ if __name__ == "__main__":
 
 	except:
 		defaultMessage()
-		sys.exit(1)
-	
-	try:
-		i = urlparse( idws_url )
-		if i.scheme == '':
-			raise RuntimeError( '[url] must be a valid URL (with trailing http://)' )
-	except:
-		raise RuntimeError( '[url] must be a valid URL (with trailing http://)' )
-	
-	
-	try:
+		sys.exit( 1 )
+
+	i = urlparse( idws_url )
+	if i.scheme == '':
+		print '[url] must be a valid URL (with trailing http://)'
+		sys.exit( 1 )	
+
+	counter = 0
+	first_url = False
+	while first_url == False and counter < loop_count:
+		counter += 1
+
 		first_url = fetch_firstlevel_download_url( idws_url )
-		
-		real_dl_url = fetch_real_download_url ( first_url )
-		
+
+		if first_url == False:
+			continue
+
+		counter2 = 0
+		real_dl_url = False
+		while real_dl_url == False and counter2 < loop_count:
+			counter2 += 1
+
+			real_dl_url = fetch_real_download_url ( first_url )
+			if real_dl_url == False:
+				#sleep, to prevent abusing idws's server resources
+				#print "sleep #", counter2
+				time.sleep(0.5)
+
+	if real_dl_url == False:
+		print "unable to fetch direct download from %s" % idws_url
+	else:
 		if echo_as_wget:
 			print "wget " + wget_extra_param + " -c \"" + real_dl_url[0] + "\" -O \"" + real_dl_url[1] + "\" "
 		else:
@@ -151,9 +185,9 @@ if __name__ == "__main__":
 			print real_dl_url[1]
 
 
-	except urllib2.HTTPError, e:
-		print "error: %s" % e.code
-	except urllib2.URLError, e:
-		print "error: %s" % e.reason
-	except:
-		print "error: %s" % str(sys.exc_info()[1])
+#	except urllib2.HTTPError, e:
+#		print "error: %s" % e.code
+#	except urllib2.URLError, e:
+#		print "error: %s" % e.reason
+#	except:
+#		print "error: %s" % str(sys.exc_info()[1])
